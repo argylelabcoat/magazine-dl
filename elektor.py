@@ -86,11 +86,16 @@ def getMagList(session, year):
 
 
 def download_file(session, url, refer, filename):
-    with session.get(url, headers={'referer': refer}, stream=True) as r:
-        r.raise_for_status()
-        with open(filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+    try:
+        with session.get(url, headers={'referer': refer}, stream=True) as r:
+            r.raise_for_status()
+            with open(filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+    except:
+        os.remove(filename)
+        return None
+
     return filename
 
 
@@ -116,6 +121,15 @@ if __name__ == '__main__':
                     for mag in magsForYear:
                         issue, url, refer = mag
                         if not os.path.exists(issue):
+                            tries = 0
                             print(url, issue)
-                            download_file(session, url, refer, issue)
+                            complete = False
+                            while complete == False and tries < 10:
+                                print("Attempt", tries)
+                                saved = download_file(session, url, refer, issue)
+                                if saved:
+                                    complete = True
+                                else:
+                                    tries += 1
+                                    time.sleep(1)
                             time.sleep(5)
