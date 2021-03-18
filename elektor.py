@@ -93,7 +93,8 @@ def download_file(session, url, refer, filename):
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
     except:
-        os.remove(filename)
+        if os.path.exists(filename):
+            os.remove(filename)
         return None
 
     return filename
