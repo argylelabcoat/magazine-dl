@@ -9,6 +9,9 @@ from bs4 import BeautifulSoup
 import requests
 
 
+## TODO: Relocate DownloadFile to a common "library"
+## TODO: Deduplicate Download URLs to prevent "same file, different name"
+
 class urls:
     login = 'https://www.elektormagazine.com/account/login'
     mags = 'https://www.elektormagazine.com/magazine/{year}'
@@ -63,6 +66,7 @@ def getMagList(session, year):
     magUrl = urls.mags.format(year=year)
     req = session.get(magUrl)
     magurls = []
+    urlset = set()
     if req.status_code == 200:
         soup = BeautifulSoup(req.text, features='html.parser')
         maglinks = soup.find_all("p", class_="Magazine__month")
@@ -75,7 +79,8 @@ def getMagList(session, year):
                     issuePath, exists = outpath(issue)
                     if not exists:
                         dlUrl = getMagDLUrl(session, anchor['href'])
-                        if dlUrl:
+                        if dlUrl and dlUrl not in urlset:
+                            urlset.add(dlUrl)
                             magurls.append((issuePath, dlUrl, magUrl))
     else:
         return None
