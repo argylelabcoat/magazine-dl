@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
+import configparser
 import os
 import re
 import time
-import configparser
 
 from bs4 import BeautifulSoup
+
+from magutil.http import download_file
 
 import requests
 
 
-## TODO: Relocate DownloadFile to a common "library"
-## TODO: Deduplicate Download URLs to prevent "same file, different name"
+# TODO: Deduplicate Download URLs to prevent "same file, different name"
 
 class urls:
     login = 'https://www.elektormagazine.com/account/login'
     mags = 'https://www.elektormagazine.com/magazine/{year}'
-
 
 
 def outpath(filename):
@@ -90,21 +90,6 @@ def getMagList(session, year):
     return None
 
 
-def download_file(session, url, refer, filename):
-    try:
-        with session.get(url, headers={'referer': refer}, stream=True) as r:
-            r.raise_for_status()
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-    except:
-        if os.path.exists(filename):
-            os.remove(filename)
-        return None
-
-    return filename
-
-
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('mags.ini')
@@ -119,23 +104,16 @@ if __name__ == '__main__':
     token = getToken(session)
     loggedIn = False
     if token:
+        print("Logging in...")
         loggedIn = login(session, email, password, token)
         if loggedIn:
+            print("Logged in.")
             for year in range(startYear, endYear):
+                print("gettings year:", year)
                 magsForYear = getMagList(session, year)
                 if magsForYear and len(magsForYear) > 0:
                     for mag in magsForYear:
                         issue, url, refer = mag
                         if not os.path.exists(issue):
-                            tries = 0
-                            print(url, issue)
-                            complete = False
-                            while complete == False and tries < 10:
-                                print("Attempt", tries)
-                                saved = download_file(session, url, refer, issue)
-                                if saved:
-                                    complete = True
-                                else:
-                                    tries += 1
-                                    time.sleep(1)
+                            saved = download_file(session, url, refer, issue)
                             time.sleep(5)

@@ -1,2 +1,4 @@
 mags.ini
 .direnv/
+
+**/__pycache__/**
