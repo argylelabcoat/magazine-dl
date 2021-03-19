@@ -3,6 +3,7 @@ import configparser
 import os
 import re
 import time
+import urllib.parse
 
 from bs4 import BeautifulSoup
 
@@ -17,6 +18,7 @@ class urls:
     login = 'https://www.linuxformat.com/subsarea'
     mags  = 'https://www.linuxformat.com/archives'
     issue = 'https://www.linuxformat.com/archives?issue={issue}'
+    root = 'https://www.linuxformat.com'
 
 
 
@@ -40,11 +42,10 @@ def getMagDLUrl(session, magUrl):
     req = session.get(magUrl)
     if req.status_code == 200:
         soup = BeautifulSoup(req.text, features='html.parser')
-        dlbutton = soup.find("div", class_="download")
-        if dlbutton:
-            anchor = dlbutton.find("a")
-            if anchor:
-                return anchor['href']
+        dllinks = soup.find_all('a', string='Click here')
+        for link in dllinks:
+            if link['href'].endswith('.pdf'):
+                return urllib.parse.urljoin(urls.root, link['href'])
     return None
 
 
@@ -78,4 +79,8 @@ if __name__ == '__main__':
             issueUrl, issueNo = issue
             if issueNo >= startIssue:
                 print(issueUrl, issueNo)
-        exit()
+                dl_url = getMagDLUrl(session, issueUrl)
+                filename = f'LinuxFormat-{issueNo}.pdf'
+                filepath, exists = outpath(filename)
+                if not exists and dl_url:
+                    download_file(session, dl_url, issueUrl, filepath)
