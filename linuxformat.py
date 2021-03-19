@@ -84,3 +84,4 @@ if __name__ == '__main__':
                 filepath, exists = outpath(filename)
                 if not exists and dl_url:
                     download_file(session, dl_url, issueUrl, filepath)
+                    time.sleep(5)
