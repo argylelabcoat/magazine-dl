@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
-import re
-import time
 import configparser
-
-from bs4 import BeautifulSoup
+import time
 
 import requests
 
+from slugify import slugify
 
 ## TODO: Relocate DownloadFile to a common "library"
 ## TODO: Deduplicate Download URLs to prevent "same file, different name"
@@ -28,21 +26,27 @@ def getArchives(session, magUrl):
     if req.status_code == 200:
         req = session.get(urls.archives)
         if req.status_code == 200:
-            return req.json()
+            return req.json()['archive']
     return None
 
 
 def download_file(session, url, refer, filename):
-    try:
-        with session.get(url, headers={'referer': refer}, stream=True) as r:
-            r.raise_for_status()
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-    except:
-        if os.path.exists(filename):
-            os.remove(filename)
-        return None
+    success = False
+    tries = 0
+    while success == False and tries < 10:
+        try:
+            with session.get(url, headers={'referer': refer}, stream=True) as r:
+                r.raise_for_status()
+                with open(filename, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+        except:
+            if os.path.exists(filename):
+                os.remove(filename)
+            tries += 1
+            time.sleep(5)
+        finally:
+            success = True
 
     return filename
 
@@ -56,8 +60,15 @@ if __name__ == '__main__':
     startUrl = config['make']['startUrl']
     archives = getArchives(session, startUrl)
     if archives:
-        print(archives)
-        for zine in archives:
-            issue, magurl = zine
-            dlurl = getMagDLUrl(session, magurl)
-            print(issue, magurl, dlurl)
+        for zine in archives['issue']:
+            attrs = zine['@attributes']
+            if 'pdf' in attrs:
+                date = attrs['date']
+                name = attrs['issue_name']
+                desc = attrs['description']
+                dlurl = attrs['pdf']
+                filename = slugify(f'{name}-{desc}')+".pdf"
+                print(filename, dlurl)
+                filepath, exists = outpath(filename)
+                if not exists:
+                    download_file(session, dlurl, startUrl, filepath)
