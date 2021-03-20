@@ -8,6 +8,7 @@ import urllib.parse
 from bs4 import BeautifulSoup
 
 from magutil.http import download_file
+from magutil.utils import ensuredir
 
 import requests
 
@@ -72,6 +73,8 @@ if __name__ == '__main__':
     sub_number = config['linuxformat']['subscriptionNo']
     surname = config['linuxformat']['surname']
     startIssue = int(config['linuxformat']['startIssue'])
+
+    ensuredir(config['linuxformat']['directory'])
     loggedIn = login(session, sub_number, surname)
     if loggedIn:
         mags = getMagList(session)

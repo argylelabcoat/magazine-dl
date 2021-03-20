@@ -7,6 +7,7 @@ import time
 from bs4 import BeautifulSoup
 
 from magutil.http import download_file
+from magutil.utils import ensuredir
 
 import requests
 
@@ -100,6 +101,7 @@ if __name__ == '__main__':
     email = config['elektor']['email']
     startYear = int(config['elektor']['startYear'])
     endYear   = int(config['elektor']['endYear']) + 1
+    ensuredir(config['elektor']['directory'])
     print("from", startYear, "to", endYear)
     token = getToken(session)
     loggedIn = False

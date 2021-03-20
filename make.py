@@ -4,6 +4,7 @@ import os
 import time
 
 from magutil.http import download_file
+from magutil.utils import ensuredir
 
 import requests
 
@@ -39,6 +40,8 @@ if __name__ == '__main__':
 
     startUrl = config['make']['startUrl']
     archives = getArchives(session, startUrl)
+
+    ensuredir(config['make']['directory'])
     if archives:
         for zine in archives['issue']:
             attrs = zine['@attributes']
